@@ -1,135 +1,47 @@
 import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { db } from './config/firebase.js';
-
-dotenv.config();
+import { config } from './config/constants.js';
+import { corsMiddleware } from './middleware/cors.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { logger } from './utils/logger.js';
+import routes from './routes/index.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = config.port;
 
 // Middleware
-app.use(cors());
+app.use(corsMiddleware);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Deimos Backend API is running' });
+// Request logging middleware
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`);
+  next();
 });
 
-// Get filtered and paginated benchmark data
-app.get('/api/benchmarks', async (req, res) => {
-  try {
-    const {
-      circuit = 'all',
-      framework = 'all',
-      language = 'all',
-      platform = 'all',
-      page = '1',
-      limit = '10'
-    } = req.query;
+// API Routes
+app.use('/api', routes);
 
-    // Parse pagination parameters
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+// 404 Handler
+app.use(notFoundHandler);
 
-    if (isNaN(pageNum) || pageNum < 1) {
-      return res.status(400).json({ error: 'Invalid page number' });
-    }
-
-    if (isNaN(limitNum) || limitNum < 1) {
-      return res.status(400).json({ error: 'Invalid limit' });
-    }
-
-    // Build Firestore query
-    let query = db.collection('benchmarks');
-
-    // Apply filters
-    if (circuit !== 'all') {
-      query = query.where('circuit', '==', circuit);
-    }
-    if (framework !== 'all') {
-      query = query.where('framework', '==', framework);
-    }
-    if (language !== 'all') {
-      query = query.where('language', '==', language);
-    }
-    if (platform !== 'all') {
-      query = query.where('platform', '==', platform);
-    }
-
-    // Get total count for filtered data
-    const countSnapshot = await query.get();
-    const totalCount = countSnapshot.size;
-
-    // Calculate pagination
-    const startIndex = (pageNum - 1) * limitNum;
-    
-    // Get paginated data
-    const snapshot = await query
-      .offset(startIndex)
-      .limit(limitNum)
-      .get();
-
-    const data = [];
-    snapshot.forEach(doc => {
-      data.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-
-    // Calculate total pages
-    const totalPages = Math.ceil(totalCount / limitNum);
-
-    res.json({
-      data,
-      pagination: {
-        currentPage: pageNum,
-        totalPages,
-        totalCount,
-        limit: limitNum,
-        hasNextPage: pageNum < totalPages,
-        hasPrevPage: pageNum > 1
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching benchmarks:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get unique filter values
-app.get('/api/filters', async (req, res) => {
-  try {
-    const snapshot = await db.collection('benchmarks').get();
-    
-    const circuits = new Set();
-    const frameworks = new Set();
-    const languages = new Set();
-    const platforms = new Set();
-
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      circuits.add(data.circuit);
-      frameworks.add(data.framework);
-      languages.add(data.language);
-      platforms.add(data.platform);
-    });
-
-    res.json({
-      circuits: ['all', ...Array.from(circuits).sort()],
-      frameworks: ['all', ...Array.from(frameworks).sort()],
-      languages: ['all', ...Array.from(languages).sort()],
-      platforms: ['all', ...Array.from(platforms).sort()]
-    });
-  } catch (error) {
-    console.error('Error fetching filters:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// Error Handler (must be last)
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
+  logger.info(`Environment: ${config.nodeEnv}`);
+  logger.info(`API available at http://localhost:${PORT}/api`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  process.exit(0);
 });

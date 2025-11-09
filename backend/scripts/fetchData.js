@@ -1,4 +1,6 @@
 import { db } from '../config/firebase.js';
+import { COLLECTION_NAMES } from '../config/constants.js';
+import { logger } from '../utils/logger.js';
 import { writeFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -8,12 +10,12 @@ const __dirname = dirname(__filename);
 
 async function fetchAllData() {
   try {
-    console.log('Fetching all data from Firebase...');
+    logger.info('Fetching all data from Firebase...');
 
-    const snapshot = await db.collection('benchmarks').get();
+    const snapshot = await db.collection(COLLECTION_NAMES.BENCHMARKS).get();
 
     if (snapshot.empty) {
-      console.log('No data found in Firebase');
+      logger.warn('No data found in Firebase');
       process.exit(1);
     }
 
@@ -25,7 +27,7 @@ async function fetchAllData() {
       });
     });
 
-    console.log(`Fetched ${data.length} benchmark entries`);
+    logger.info(`Fetched ${data.length} benchmark entries`);
 
     // Write to firebasedata.js
     const outputPath = join(__dirname, '../firebasedata.js');
@@ -36,11 +38,11 @@ export const firebaseData = ${JSON.stringify(data, null, 2)};
 `;
 
     await writeFile(outputPath, fileContent, 'utf-8');
-    console.log(`Data written to ${outputPath}`);
-    console.log('Fetch completed successfully!');
+    logger.info(`Data written to ${outputPath}`);
+    logger.info('Fetch completed successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('Error fetching data:', error);
+    logger.error('Error fetching data:', error);
     process.exit(1);
   }
 }

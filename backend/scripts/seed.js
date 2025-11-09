@@ -1,4 +1,6 @@
 import { db } from '../config/firebase.js';
+import { COLLECTION_NAMES } from '../config/constants.js';
+import { logger } from '../utils/logger.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -8,7 +10,7 @@ const __dirname = dirname(__filename);
 
 async function seedDatabase() {
   try {
-    console.log('Starting database seeding...');
+    logger.info('Starting database seeding...');
 
     // Read benchmark data from the website folder
     const benchmarkPath = join(__dirname, '../../website/src/app/benchmark.ts');
@@ -29,11 +31,11 @@ async function seedDatabase() {
 
     const benchmarkData = eval(`(${dataString})`);
 
-    console.log(`Found ${benchmarkData.length} benchmark entries`);
+    logger.info(`Found ${benchmarkData.length} benchmark entries`);
 
     // Delete all existing documents in the benchmarks collection
-    console.log('Deleting existing data...');
-    const existingDocs = await db.collection('benchmarks').get();
+    logger.info('Deleting existing data...');
+    const existingDocs = await db.collection(COLLECTION_NAMES.BENCHMARKS).get();
     const batch = db.batch();
     
     existingDocs.forEach(doc => {
@@ -41,14 +43,14 @@ async function seedDatabase() {
     });
     
     await batch.commit();
-    console.log(`Deleted ${existingDocs.size} existing documents`);
+    logger.info(`Deleted ${existingDocs.size} existing documents`);
 
     // Add new data
-    console.log('Adding new data...');
+    logger.info('Adding new data...');
     let addedCount = 0;
 
     for (const item of benchmarkData) {
-      await db.collection('benchmarks').add({
+      await db.collection(COLLECTION_NAMES.BENCHMARKS).add({
         circuit: item.circuit,
         framework: item.framework,
         language: item.language,
@@ -61,11 +63,11 @@ async function seedDatabase() {
       addedCount++;
     }
 
-    console.log(`Successfully seeded ${addedCount} benchmark entries`);
-    console.log('Database seeding completed!');
+    logger.info(`Successfully seeded ${addedCount} benchmark entries`);
+    logger.info('Database seeding completed!');
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    logger.error('Error seeding database:', error);
     process.exit(1);
   }
 }
