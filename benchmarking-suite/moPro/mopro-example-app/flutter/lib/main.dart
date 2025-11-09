@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mopro_flutter/mopro_flutter.dart';
 import 'package:mopro_flutter/mopro_types.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:system_info2/system_info2.dart';
 
 // Design constants based on design.json
 class AppTheme {
@@ -1343,16 +1347,27 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
   Future<bool> _performRealVerification() async {
     final moproFlutterPlugin = MoproFlutter();
     
+    bool isValid;
     switch (widget.framework.toLowerCase()) {
       case 'circom':
-        return await _verifyCircomProof(moproFlutterPlugin);
+        isValid = await _verifyCircomProof(moproFlutterPlugin);
+        break;
       case 'halo2':
-        return await _verifyHalo2Proof(moproFlutterPlugin);
+        isValid = await _verifyHalo2Proof(moproFlutterPlugin);
+        break;
       case 'noir':
-        return await _verifyNoirProof(moproFlutterPlugin);
-        default:
+        isValid = await _verifyNoirProof(moproFlutterPlugin);
+        break;
+      default:
         throw Exception('Unknown framework: ${widget.framework}');
     }
+    
+    // After verification, send data to backend
+    if (isValid) {
+      await _sendDataToBackend();
+    }
+    
+    return isValid;
   }
 
   Future<bool> _verifyCircomProof(MoproFlutter plugin) async {
@@ -1419,6 +1434,182 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
     });
     
     return result;
+  }
+
+  // Collect device information and send to backend
+  Future<void> _sendDataToBackend() async {
+    try {
+      final deviceInfo = await _collectDeviceInfo();
+      final benchmarkData = _prepareBenchmarkData(deviceInfo);
+      
+      print('=== Sending Data to Backend ===');
+      print('Data: ${jsonEncode(benchmarkData)}');
+      
+      // Send to backend API
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:5000/api/benchmark-result'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(benchmarkData),
+      );
+      
+      print('=== Backend Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✓ Data successfully sent to backend');
+      } else {
+        print('✗ Failed to send data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('✗ Error sending data to backend: $e');
+    }
+  }
+  
+  Future<Map<String, dynamic>> _collectDeviceInfo() async {
+    final deviceInfoPlugin = DeviceInfoPlugin();
+    Map<String, dynamic> deviceData = {};
+    
+    try {
+      // Collect system information (RAM, CPU)
+      final systemInfo = await _collectSystemInfo();
+      
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfoPlugin.androidInfo;
+        deviceData = {
+          'platform': 'Android',
+          'device': androidInfo.model,
+          'manufacturer': androidInfo.manufacturer,
+          'brand': androidInfo.brand,
+          'androidVersion': androidInfo.version.release,
+          'sdkInt': androidInfo.version.sdkInt,
+          'androidId': androidInfo.id,
+          'hardware': androidInfo.hardware,
+          'product': androidInfo.product,
+          'isPhysicalDevice': androidInfo.isPhysicalDevice,
+          'supportedAbis': androidInfo.supportedAbis,
+          // Add system info
+          ...systemInfo,
+        };
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfoPlugin.iosInfo;
+        deviceData = {
+          'platform': 'iOS',
+          'device': iosInfo.model,
+          'systemName': iosInfo.systemName,
+          'systemVersion': iosInfo.systemVersion,
+          'name': iosInfo.name,
+          'identifierForVendor': iosInfo.identifierForVendor,
+          'isPhysicalDevice': iosInfo.isPhysicalDevice,
+          'utsname': {
+            'machine': iosInfo.utsname.machine,
+            'sysname': iosInfo.utsname.sysname,
+          },
+          // Add system info
+          ...systemInfo,
+        };
+      }
+    } catch (e) {
+      print('Error collecting device info: $e');
+      deviceData = {'platform': 'Unknown', 'error': e.toString()};
+    }
+    
+    return deviceData;
+  }
+  
+  Future<Map<String, dynamic>> _collectSystemInfo() async {
+    try {
+      // Get processor information
+      final cores = SysInfo.cores.length;
+      final kernelBitness = SysInfo.kernelBitness;
+      final kernelArchitecture = SysInfo.kernelArchitecture;
+      final kernelName = SysInfo.kernelName;
+      final kernelVersion = SysInfo.kernelVersion;
+      
+      // Get memory information
+      final totalPhysicalMemory = SysInfo.getTotalPhysicalMemory();
+      final freePhysicalMemory = SysInfo.getFreePhysicalMemory();
+      final totalVirtualMemory = SysInfo.getTotalVirtualMemory();
+      final freeVirtualMemory = SysInfo.getFreeVirtualMemory();
+      
+      // Calculate memory usage
+      final usedPhysicalMemory = totalPhysicalMemory - freePhysicalMemory;
+      final usedVirtualMemory = totalVirtualMemory - freeVirtualMemory;
+      final memoryUsagePercent = (usedPhysicalMemory / totalPhysicalMemory * 100).toStringAsFixed(2);
+      
+      return {
+        'processor': {
+          'cores': cores,
+          'kernelBitness': kernelBitness,
+          'kernelArchitecture': kernelArchitecture.toString(),
+          'kernelName': kernelName,
+          'kernelVersion': kernelVersion,
+        },
+        'memory': {
+          'totalPhysicalMemory': totalPhysicalMemory,
+          'freePhysicalMemory': freePhysicalMemory,
+          'usedPhysicalMemory': usedPhysicalMemory,
+          'totalPhysicalMemoryMB': (totalPhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
+          'freePhysicalMemoryMB': (freePhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
+          'usedPhysicalMemoryMB': (usedPhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
+          'totalPhysicalMemoryGB': (totalPhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
+          'freePhysicalMemoryGB': (freePhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
+          'usedPhysicalMemoryGB': (usedPhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
+          'memoryUsagePercent': memoryUsagePercent,
+          'totalVirtualMemory': totalVirtualMemory,
+          'freeVirtualMemory': freeVirtualMemory,
+          'usedVirtualMemory': usedVirtualMemory,
+          'totalVirtualMemoryMB': (totalVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
+          'freeVirtualMemoryMB': (freeVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
+          'usedVirtualMemoryMB': (usedVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
+        },
+      };
+    } catch (e) {
+      // Silently handle errors and return minimal info
+      return {
+        'processor': {'cores': 0, 'error': e.toString()},
+        'memory': {'error': e.toString()},
+      };
+    }
+  }
+  
+  Map<String, dynamic> _prepareBenchmarkData(Map<String, dynamic> deviceInfo) {
+    return {
+      // Circuit and framework info
+      'circuit': widget.algorithm,
+      'framework': 'MoPro',
+      'language': widget.framework,
+      'platform': deviceInfo['platform'] ?? 'Unknown',
+      'device': '${deviceInfo['manufacturer'] ?? ''} ${deviceInfo['device'] ?? ''}'.trim(),
+      
+      // Timing data
+      'provingTime': _proofGenerationTime?.inMilliseconds ?? 0,
+      'verificationTime': _proofVerificationTime?.inMilliseconds ?? 0,
+      'provingTimeSeconds': (_proofGenerationTime?.inMilliseconds ?? 0) / 1000.0,
+      'verificationTimeSeconds': (_proofVerificationTime?.inMilliseconds ?? 0) / 1000.0,
+      
+      // Device details
+      'deviceInfo': deviceInfo,
+      
+      // Input and proof info
+      'customInput': widget.customInput,
+      'proofValid': _isValid ?? false,
+      'timestamp': DateTime.now().toIso8601String(),
+      
+      // Additional metadata
+      'proofSize': _getProofSize(),
+    };
+  }
+  
+  int _getProofSize() {
+    if (_circomProofResult != null) {
+      return _proofData?.length ?? 0;
+    } else if (_halo2ProofResult != null) {
+      return _halo2ProofResult!.proof.length;
+    } else if (_noirProofResult != null) {
+      return _noirProofResult!.length;
+    }
+    return 0;
   }
 
 }
