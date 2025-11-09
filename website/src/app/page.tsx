@@ -1,6 +1,8 @@
 'use client';
-import { useState } from 'react';
-import { benchmarkData } from './table';
+import { useState, useEffect } from 'react';
+import type { BenchmarkData } from './benchmark';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function Home() {
   const [filterCircuit, setFilterCircuit] = useState<string>('all');
@@ -9,28 +11,74 @@ export default function Home() {
   const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  
+  const [benchmarkData, setBenchmarkData] = useState<BenchmarkData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  
+  const [circuits, setCircuits] = useState<string[]>(['all']);
+  const [frameworks, setFrameworks] = useState<string[]>(['all']);
+  const [languages, setLanguages] = useState<string[]>(['all']);
+  const [platforms, setPlatforms] = useState<string[]>(['all']);
 
-  // Get unique values for filters
-  const circuits = ['all', ...Array.from(new Set(benchmarkData.map(d => d.circuit)))];
-  const frameworks = ['all', ...Array.from(new Set(benchmarkData.map(d => d.framework)))];
-  const languages = ['all', ...Array.from(new Set(benchmarkData.map(d => d.language)))];
-  const platforms = ['all', ...Array.from(new Set(benchmarkData.map(d => d.platform)))];
+  // Fetch filter options
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/filters`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch filters');
+        }
+        const data = await response.json();
+        setCircuits(data.circuits);
+        setFrameworks(data.frameworks);
+        setLanguages(data.languages);
+        setPlatforms(data.platforms);
+      } catch (err) {
+        console.error('Error fetching filters:', err);
+      }
+    };
+    fetchFilters();
+  }, []);
 
-  // Filter data
-  const filteredData = benchmarkData.filter(item => {
-    return (
-      (filterCircuit === 'all' || item.circuit === filterCircuit) &&
-      (filterFramework === 'all' || item.framework === filterFramework) &&
-      (filterLanguage === 'all' || item.language === filterLanguage) &&
-      (filterPlatform === 'all' || item.platform === filterPlatform)
-    );
-  });
+  // Fetch benchmark data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const params = new URLSearchParams({
+          circuit: filterCircuit,
+          framework: filterFramework,
+          language: filterLanguage,
+          platform: filterPlatform,
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString()
+        });
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
+        const response = await fetch(`${API_URL}/api/benchmarks?${params}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setBenchmarkData(result.data);
+        setTotalPages(result.pagination.totalPages);
+        setTotalCount(result.pagination.totalCount);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        setBenchmarkData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filterCircuit, filterFramework, filterLanguage, filterPlatform, currentPage, itemsPerPage]);
 
   // Reset to page 1 when filters change
   const handleFilterChange = (setter: (value: string) => void, value: string) => {
@@ -178,9 +226,21 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((item, index) => (
-                    <tr key={startIndex + index} className="hover:bg-gray-50 transition-colors">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
+                      Loading benchmark data...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-red-500">
+                      Error: {error}
+                    </td>
+                  </tr>
+                ) : benchmarkData.length > 0 ? (
+                  benchmarkData.map((item, index) => (
+                    <tr key={item.id || index} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {item.circuit}
                       </td>
@@ -226,7 +286,7 @@ export default function Home() {
           </div>
 
           {/* Pagination Controls */}
-          {filteredData.length > 0 && (
+          {!loading && !error && totalCount > 0 && (
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               {/* Items per page selector */}
               <div className="flex items-center gap-2">
@@ -247,9 +307,9 @@ export default function Home() {
 
               {/* Page info */}
               <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                <span className="font-medium">{Math.min(endIndex, filteredData.length)}</span> of{' '}
-                <span className="font-medium">{filteredData.length}</span> results
+                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
+                <span className="font-medium">{totalCount}</span> results
               </div>
 
               {/* Page numbers */}
@@ -303,22 +363,22 @@ export default function Home() {
         </div>
 
         {/* Summary Stats */}
-        {filteredData.length > 0 && (
+        {!loading && !error && benchmarkData.length > 0 && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-blue-50 rounded-lg p-6">
               <h3 className="text-sm font-medium text-blue-900 mb-2">Total Benchmarks</h3>
-              <p className="text-3xl font-bold text-blue-600">{filteredData.length}</p>
+              <p className="text-3xl font-bold text-blue-600">{totalCount}</p>
             </div>
             <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-green-900 mb-2">Avg Proving Time</h3>
+              <h3 className="text-sm font-medium text-green-900 mb-2">Avg Proving Time (Current Page)</h3>
               <p className="text-3xl font-bold text-green-600">
-                {(filteredData.reduce((sum, item) => sum + item.provingTime, 0) / filteredData.length).toFixed(2)}s
+                {(benchmarkData.reduce((sum, item) => sum + item.provingTime, 0) / benchmarkData.length).toFixed(2)}s
               </p>
             </div>
             <div className="bg-purple-50 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-purple-900 mb-2">Avg Verification Time</h3>
+              <h3 className="text-sm font-medium text-purple-900 mb-2">Avg Verification Time (Current Page)</h3>
               <p className="text-3xl font-bold text-purple-600">
-                {(filteredData.reduce((sum, item) => sum + item.verificationTime, 0) / filteredData.length).toFixed(2)}s
+                {(benchmarkData.reduce((sum, item) => sum + item.verificationTime, 0) / benchmarkData.length).toFixed(2)}s
               </p>
             </div>
           </div>
