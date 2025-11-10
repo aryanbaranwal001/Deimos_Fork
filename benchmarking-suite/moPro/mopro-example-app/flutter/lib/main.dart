@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:mopro_flutter/mopro_flutter.dart';
 import 'package:mopro_flutter/mopro_types.dart';
@@ -504,6 +505,12 @@ class _ProofResultPageState extends State<ProofResultPage> {
   // Benchmarking timing
   Duration? _proofGenerationTime;
   Duration? _proofVerificationTime;
+  
+  // Memory tracking during proof generation
+  int _freeMemoryBeforeProof = 0;
+  int _minFreeMemoryDuringProof = 0;
+  int _freeMemoryAfterProof = 0;
+  int _peakMemoryUsage = 0;
 
   @override
   void initState() {
@@ -976,18 +983,27 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Get the appropriate zkey path based on algorithm
     final zkeyPath = _getZkeyPath();
     
+    // Capture memory BEFORE proof generation
+    _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    
     // Start timing
     final stopwatch = Stopwatch()..start();
+    
+    // Start memory monitoring in background
+    _startMemoryMonitoring();
     
     // Generate proof using actual MoPro
     final proofResult = await plugin.generateCircomProof(
       zkeyPath, 
-      inputs, 
+            inputs, 
       ProofLib.arkworks
     );
     
     // Stop timing and store
     stopwatch.stop();
+    
+    // Capture memory AFTER proof generation
+    _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
     
     if (proofResult == null) {
       throw Exception('Failed to generate Circom proof');
@@ -1013,8 +1029,14 @@ class _ProofResultPageState extends State<ProofResultPage> {
       "out": [numericInput]
     };
     
+    // Capture memory BEFORE proof generation
+    _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    
     // Start timing
     final stopwatch = Stopwatch()..start();
+    
+    // Start memory monitoring in background
+    _startMemoryMonitoring();
     
     // Generate proof using actual MoPro
     final proofResult = await plugin.generateHalo2Proof(
@@ -1025,6 +1047,9 @@ class _ProofResultPageState extends State<ProofResultPage> {
     
     // Stop timing and store
     stopwatch.stop();
+    
+    // Capture memory AFTER proof generation
+    _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
     
     if (proofResult == null) {
       throw Exception('Failed to generate Halo2 proof');
@@ -1047,8 +1072,14 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Get the appropriate circuit path and settings
     final (circuitPath, srsPath, onChain, vk) = await _getNoirSettings();
     
+    // Capture memory BEFORE proof generation
+    _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    
     // Start timing
     final stopwatch = Stopwatch()..start();
+    
+    // Start memory monitoring in background
+    _startMemoryMonitoring();
     
     // Generate proof using actual MoPro with custom inputs
     final proof = await plugin.generateNoirProof(
@@ -1062,6 +1093,9 @@ class _ProofResultPageState extends State<ProofResultPage> {
     
     // Stop timing and store
     stopwatch.stop();
+    
+    // Capture memory AFTER proof generation
+    _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
     
     // Store the proof result for verification
     setState(() {
@@ -1513,30 +1547,61 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
   
   Future<Map<String, dynamic>> _collectSystemInfo() async {
     try {
-      
       // Get memory information
       final totalPhysicalMemory = SysInfo.getTotalPhysicalMemory(); // in bytes
-      final freePhysicalMemory = SysInfo.getFreePhysicalMemory(); // in bytes
       
-      // Calculate memory usage
-      final usedPhysicalMemory = totalPhysicalMemory - freePhysicalMemory;
-      final memoryUsagePercent = (usedPhysicalMemory / totalPhysicalMemory * 100).toStringAsFixed(2);
+      // Calculate memory used during proof generation
+      final memoryUsedBeforeProof = totalPhysicalMemory - _freeMemoryBeforeProof;
+      final memoryUsedAfterProof = totalPhysicalMemory - _freeMemoryAfterProof;
+      
+      // Calculate memory consumed by proof generation
+      final memoryConsumedByProof = _peakMemoryUsage - memoryUsedBeforeProof;
       
       return {
-
         'memory': {
           'totalPhysicalMemory': totalPhysicalMemory,
-          'usedPhysicalMemory': usedPhysicalMemory,
-          'memoryUsagePercent': memoryUsagePercent,
+          
+          // Memory BEFORE proof generation
+          'memoryUsedBeforeProof': memoryUsedBeforeProof,
+          
+          // Memory DURING proof generation (peak usage)
+          'peakMemoryUsage': _peakMemoryUsage,
+          
+          // Memory consumed specifically by proof generation
+          'memoryConsumedByProof': memoryConsumedByProof,
+
+          // Peak memory load during percentage
+          'peakMemoryLoadInPercentage': memoryConsumedByProof / totalPhysicalMemory * 100,
         },
       };
     } catch (e) {
       // Silently handle errors and return minimal info
       return {
-        'processor': {'cores': 0, 'error': e.toString()},
         'memory': {'error': e.toString()},
       };
     }
+  }
+  
+  // Monitor memory usage during proof generation
+  void _startMemoryMonitoring() {
+    _peakMemoryUsage = 0;
+    _minFreeMemoryDuringProof = 0;
+    
+    // Sample memory every 100ms during proof generation
+    Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (_isGenerating) {
+        final currentFreeMemory = SysInfo.getFreePhysicalMemory();
+        final currentUsedMemory = SysInfo.getTotalPhysicalMemory() - currentFreeMemory;
+        
+        // Track peak memory usage
+        if (currentUsedMemory > _peakMemoryUsage) {
+          _peakMemoryUsage = currentUsedMemory;
+          _minFreeMemoryDuringProof = currentFreeMemory;
+        }
+      } else {
+        timer.cancel();
+      }
+    });
   }
   
   Map<String, dynamic> _prepareBenchmarkData(Map<String, dynamic> deviceInfo) {
