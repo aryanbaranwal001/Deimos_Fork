@@ -1551,14 +1551,14 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
       
       // Input and proof info
       'customInput': widget.customInput,
-      'proofValid': _isValid ?? false,
-      'timestamp': DateTime.now().toIso8601String(),
       
       // Device details
       'deviceInfo': deviceInfo,
       
       // Additional metadata
       'proofSize': _getProofSize(),
+
+      'timestamp': DateTime.now().toIso8601String(),
     };
   }
   

@@ -7,9 +7,9 @@ export const receiveBenchmarkResult = async (req, res) => {
   try {
     const data = req.body;
   
-    logger.info('\n=== Complete Data ===');
-    logger.info(JSON.stringify(data, null, 2));
-    logger.info('=====================================\n');
+    console.log('\n111=== Complete Data ===111\n');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('\n111=====================================111\n');
     
     res.status(200).json({
       success: true,
