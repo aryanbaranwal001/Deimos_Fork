@@ -1451,7 +1451,7 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(benchmarkData),
       );
-      
+
       print('=== Backend Response ===');
       print('Status Code: ${response.statusCode}');
       print('Response Body: ${response.body}');
@@ -1515,8 +1515,8 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
     try {
       
       // Get memory information
-      final totalPhysicalMemory = SysInfo.getTotalPhysicalMemory();
-      final freePhysicalMemory = SysInfo.getFreePhysicalMemory();
+      final totalPhysicalMemory = SysInfo.getTotalPhysicalMemory(); // in bytes
+      final freePhysicalMemory = SysInfo.getFreePhysicalMemory(); // in bytes
       
       // Calculate memory usage
       final usedPhysicalMemory = totalPhysicalMemory - freePhysicalMemory;
@@ -1549,9 +1549,6 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
       // Timing data
       'provingTimeMiliSeconds': (_proofGenerationTime?.inMilliseconds ?? 0),
       'verificationTimeMiliSeconds': (_proofVerificationTime?.inMilliseconds ?? 0),
-      
-      // Input and proof info
-      'customInput': widget.customInput,
       
       // Device details
       'deviceInfo': deviceInfo,
