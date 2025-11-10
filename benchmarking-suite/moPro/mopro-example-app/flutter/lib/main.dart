@@ -10,6 +10,7 @@ import 'package:mopro_flutter/mopro_types.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:system_info2/system_info2.dart';
+import 'package:battery_plus/battery_plus.dart';
 
 // Design constants based on design.json
 class AppTheme {
@@ -511,6 +512,10 @@ class _ProofResultPageState extends State<ProofResultPage> {
   int _minFreeMemoryDuringProof = 0;
   int _freeMemoryAfterProof = 0;
   int _peakMemoryUsage = 0;
+  
+  // Battery tracking
+  int _batteryBeforeProof = 0;
+  int _batteryAfterProof = 0;
 
   @override
   void initState() {
@@ -983,8 +988,10 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Get the appropriate zkey path based on algorithm
     final zkeyPath = _getZkeyPath();
     
-    // Capture memory BEFORE proof generation
+    // Capture memory and battery BEFORE proof generation
     _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    final battery = Battery();
+    _batteryBeforeProof = await battery.batteryLevel;
     
     // Start timing
     final stopwatch = Stopwatch()..start();
@@ -1002,8 +1009,9 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Stop timing and store
     stopwatch.stop();
     
-    // Capture memory AFTER proof generation
+    // Capture memory and battery AFTER proof generation
     _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
+    _batteryAfterProof = await battery.batteryLevel;
     
     if (proofResult == null) {
       throw Exception('Failed to generate Circom proof');
@@ -1029,8 +1037,10 @@ class _ProofResultPageState extends State<ProofResultPage> {
       "out": [numericInput]
     };
     
-    // Capture memory BEFORE proof generation
+    // Capture memory and battery BEFORE proof generation
     _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    final battery = Battery();
+    _batteryBeforeProof = await battery.batteryLevel;
     
     // Start timing
     final stopwatch = Stopwatch()..start();
@@ -1048,8 +1058,9 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Stop timing and store
     stopwatch.stop();
     
-    // Capture memory AFTER proof generation
+    // Capture memory and battery AFTER proof generation
     _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
+    _batteryAfterProof = await battery.batteryLevel;
     
     if (proofResult == null) {
       throw Exception('Failed to generate Halo2 proof');
@@ -1072,8 +1083,10 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Get the appropriate circuit path and settings
     final (circuitPath, srsPath, onChain, vk) = await _getNoirSettings();
     
-    // Capture memory BEFORE proof generation
+    // Capture memory and battery BEFORE proof generation
     _freeMemoryBeforeProof = SysInfo.getFreePhysicalMemory();
+    final battery = Battery();
+    _batteryBeforeProof = await battery.batteryLevel;
     
     // Start timing
     final stopwatch = Stopwatch()..start();
@@ -1094,8 +1107,9 @@ class _ProofResultPageState extends State<ProofResultPage> {
     // Stop timing and store
     stopwatch.stop();
     
-    // Capture memory AFTER proof generation
+    // Capture memory and battery AFTER proof generation
     _freeMemoryAfterProof = SysInfo.getFreePhysicalMemory();
+    _batteryAfterProof = await battery.batteryLevel;
     
     // Store the proof result for verification
     setState(() {
@@ -1571,7 +1585,15 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
           'memoryConsumedByProof': memoryConsumedByProof,
 
           // Peak memory load during percentage
-          'peakMemoryLoadInPercentage': memoryConsumedByProof / totalPhysicalMemory * 100,
+          'peakMemoryLoadInPercentage': _peakMemoryUsage / totalPhysicalMemory * 100,
+
+          // Memory consumed percentage
+          'memoryConsumedInPercentage': memoryConsumedByProof / totalPhysicalMemory * 100,
+        },
+        'battery': {
+          'batteryBeforeProof': _batteryBeforeProof,
+          'batteryAfterProof': _batteryAfterProof,
+          'batteryConsumed': _batteryBeforeProof - _batteryAfterProof,
         },
       };
     } catch (e) {
