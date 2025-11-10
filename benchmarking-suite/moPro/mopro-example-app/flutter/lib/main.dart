@@ -1481,6 +1481,7 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
           'device': androidInfo.model,
           'manufacturer': androidInfo.manufacturer,
           'androidVersion': androidInfo.version.release,
+          'androidId': androidInfo.id,
           // Add system info
           ...systemInfo,
         };
