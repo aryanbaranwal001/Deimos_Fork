@@ -1480,14 +1480,7 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
           'platform': 'Android',
           'device': androidInfo.model,
           'manufacturer': androidInfo.manufacturer,
-          'brand': androidInfo.brand,
           'androidVersion': androidInfo.version.release,
-          'sdkInt': androidInfo.version.sdkInt,
-          'androidId': androidInfo.id,
-          'hardware': androidInfo.hardware,
-          'product': androidInfo.product,
-          'isPhysicalDevice': androidInfo.isPhysicalDevice,
-          'supportedAbis': androidInfo.supportedAbis,
           // Add system info
           ...systemInfo,
         };
@@ -1519,49 +1512,21 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
   
   Future<Map<String, dynamic>> _collectSystemInfo() async {
     try {
-      // Get processor information
-      final cores = SysInfo.cores.length;
-      final kernelBitness = SysInfo.kernelBitness;
-      final kernelArchitecture = SysInfo.kernelArchitecture;
-      final kernelName = SysInfo.kernelName;
-      final kernelVersion = SysInfo.kernelVersion;
       
       // Get memory information
       final totalPhysicalMemory = SysInfo.getTotalPhysicalMemory();
       final freePhysicalMemory = SysInfo.getFreePhysicalMemory();
-      final totalVirtualMemory = SysInfo.getTotalVirtualMemory();
-      final freeVirtualMemory = SysInfo.getFreeVirtualMemory();
       
       // Calculate memory usage
       final usedPhysicalMemory = totalPhysicalMemory - freePhysicalMemory;
-      final usedVirtualMemory = totalVirtualMemory - freeVirtualMemory;
       final memoryUsagePercent = (usedPhysicalMemory / totalPhysicalMemory * 100).toStringAsFixed(2);
       
       return {
-        'processor': {
-          'cores': cores,
-          'kernelBitness': kernelBitness,
-          'kernelArchitecture': kernelArchitecture.toString(),
-          'kernelName': kernelName,
-          'kernelVersion': kernelVersion,
-        },
+
         'memory': {
           'totalPhysicalMemory': totalPhysicalMemory,
-          'freePhysicalMemory': freePhysicalMemory,
           'usedPhysicalMemory': usedPhysicalMemory,
-          'totalPhysicalMemoryMB': (totalPhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
-          'freePhysicalMemoryMB': (freePhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
-          'usedPhysicalMemoryMB': (usedPhysicalMemory / (1024 * 1024)).toStringAsFixed(2),
-          'totalPhysicalMemoryGB': (totalPhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
-          'freePhysicalMemoryGB': (freePhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
-          'usedPhysicalMemoryGB': (usedPhysicalMemory / (1024 * 1024 * 1024)).toStringAsFixed(2),
           'memoryUsagePercent': memoryUsagePercent,
-          'totalVirtualMemory': totalVirtualMemory,
-          'freeVirtualMemory': freeVirtualMemory,
-          'usedVirtualMemory': usedVirtualMemory,
-          'totalVirtualMemoryMB': (totalVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
-          'freeVirtualMemoryMB': (freeVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
-          'usedVirtualMemoryMB': (usedVirtualMemory / (1024 * 1024)).toStringAsFixed(2),
         },
       };
     } catch (e) {
@@ -1579,22 +1544,18 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
       'circuit': widget.algorithm,
       'framework': 'MoPro',
       'language': widget.framework,
-      'platform': deviceInfo['platform'] ?? 'Unknown',
-      'device': '${deviceInfo['manufacturer'] ?? ''} ${deviceInfo['device'] ?? ''}'.trim(),
       
       // Timing data
-      'provingTime': _proofGenerationTime?.inMilliseconds ?? 0,
-      'verificationTime': _proofVerificationTime?.inMilliseconds ?? 0,
-      'provingTimeSeconds': (_proofGenerationTime?.inMilliseconds ?? 0) / 1000.0,
-      'verificationTimeSeconds': (_proofVerificationTime?.inMilliseconds ?? 0) / 1000.0,
-      
-      // Device details
-      'deviceInfo': deviceInfo,
+      'provingTimeMiliSeconds': (_proofGenerationTime?.inMilliseconds ?? 0),
+      'verificationTimeMiliSeconds': (_proofVerificationTime?.inMilliseconds ?? 0),
       
       // Input and proof info
       'customInput': widget.customInput,
       'proofValid': _isValid ?? false,
       'timestamp': DateTime.now().toIso8601String(),
+      
+      // Device details
+      'deviceInfo': deviceInfo,
       
       // Additional metadata
       'proofSize': _getProofSize(),

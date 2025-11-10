@@ -1,3 +1,5 @@
+### Regularly
+emulator -list-avds
 emulator -avd Pixel_7_API_34 -gpu swiftshader_indirect
 
 flutter doctor
