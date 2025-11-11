@@ -1495,7 +1495,7 @@ Timestamp: ${DateTime.now().millisecondsSinceEpoch}
       
       // Send to backend API
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/api/benchmark-result'),
+        Uri.parse('https://deimos-fork.onrender.com/api/benchmark-result'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(benchmarkData),
       );
