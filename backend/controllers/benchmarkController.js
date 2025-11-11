@@ -42,7 +42,7 @@ export const getBenchmarks = async (req, res) => {
       query = query.where('language', '==', language);
     }
     if (platform !== 'all') {
-      query = query.where('platform', '==', platform);
+      query = query.where('deviceInfo.platform', '==', platform);
     }
 
     // Get total count for filtered data
@@ -100,10 +100,10 @@ export const getFilters = async (req, res) => {
 
     snapshot.forEach(doc => {
       const data = doc.data();
-      circuits.add(data.circuit);
-      frameworks.add(data.framework);
-      languages.add(data.language);
-      platforms.add(data.platform);
+      if (data.circuit) circuits.add(data.circuit);
+      if (data.framework) frameworks.add(data.framework);
+      if (data.language) languages.add(data.language);
+      if (data.deviceInfo?.platform) platforms.add(data.deviceInfo.platform);
     });
 
     res.json({

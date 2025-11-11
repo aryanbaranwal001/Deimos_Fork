@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { BenchmarkData } from './benchmark';
+import type { BenchmarkData } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -17,6 +17,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
   const [circuits, setCircuits] = useState<string[]>(['all']);
   const [frameworks, setFrameworks] = useState<string[]>(['all']);
@@ -127,274 +128,468 @@ export default function Home() {
     return pages;
   };
 
+  const toggleRow = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-8">
-
-
-        {/* Filters */}
-        <div className="mb-8 flex flex-wrap gap-4 justify-center">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Circuit</label>
-            <select
-              value={filterCircuit}
-              onChange={(e) => handleFilterChange(setFilterCircuit, e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {circuits.map(circuit => (
-                <option key={circuit} value={circuit}>
-                  {circuit === 'all' ? 'All Circuits' : circuit}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Framework</label>
-            <select
-              value={filterFramework}
-              onChange={(e) => handleFilterChange(setFilterFramework, e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {frameworks.map(framework => (
-                <option key={framework} value={framework}>
-                  {framework === 'all' ? 'All Frameworks' : framework}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-            <select
-              value={filterLanguage}
-              onChange={(e) => handleFilterChange(setFilterLanguage, e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {languages.map(language => (
-                <option key={language} value={language}>
-                  {language === 'all' ? 'All Languages' : language}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
-            <select
-              value={filterPlatform}
-              onChange={(e) => handleFilterChange(setFilterPlatform, e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {platforms.map(platform => (
-                <option key={platform} value={platform}>
-                  {platform === 'all' ? 'All Platforms' : platform}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Benchmark Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Circuit
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Framework
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Language
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Platform
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Device
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Proving Time (s)
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Verification Time (s)
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
-                      Loading benchmark data...
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-red-500">
-                      Error: {error}
-                    </td>
-                  </tr>
-                ) : benchmarkData.length > 0 ? (
-                  benchmarkData.map((item, index) => (
-                    <tr key={item.id || index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.circuit}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {item.framework}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.language === 'Circom' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'
-                        }`}>
-                          {item.language}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.platform === 'Android' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {item.platform}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {item.device}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                        {item.provingTime.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                        {item.verificationTime.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
-                      No benchmark data matches the selected filters
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          {!loading && !error && totalCount > 0 && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              {/* Items per page selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700">Show</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={30}>30</option>
-                  <option value={40}>40</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-700">per page</span>
-              </div>
-
-              {/* Page info */}
-              <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-                <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
-                <span className="font-medium">{totalCount}</span> results
-              </div>
-
-              {/* Page numbers */}
-              <div className="flex items-center gap-1">
-                {/* Previous button */}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-300'
-                  }`}
-                >
-                  Previous
-                </button>
-
-                {/* Page numbers */}
-                {getPageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                    disabled={page === '...'}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      page === currentPage
-                        ? 'bg-blue-600 text-white'
-                        : page === '...'
-                        ? 'bg-white text-gray-400 cursor-default'
-                        : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-300'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                {/* Next button */}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-300'
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Summary Stats */}
-        {!loading && !error && benchmarkData.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-blue-900 mb-2">Total Benchmarks</h3>
-              <p className="text-3xl font-bold text-blue-600">{totalCount}</p>
-            </div>
-            <div className="bg-green-50 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-green-900 mb-2">Avg Proving Time (Current Page)</h3>
-              <p className="text-3xl font-bold text-green-600">
-                {(benchmarkData.reduce((sum, item) => sum + item.provingTime, 0) / benchmarkData.length).toFixed(2)}s
-              </p>
-            </div>
-            <div className="bg-purple-50 rounded-lg p-6">
-              <h3 className="text-sm font-medium text-purple-900 mb-2">Avg Verification Time (Current Page)</h3>
-              <p className="text-3xl font-bold text-purple-600">
-                {(benchmarkData.reduce((sum, item) => sum + item.verificationTime, 0) / benchmarkData.length).toFixed(2)}s
-              </p>
-            </div>
-          </div>
-        )}
-
-{/* Hero Section */}
-<div className="text-center mt-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            <span className="text-blue-600">DEIMOS</span>
+        <div className="text-center mb-12">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">DEIMOS</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Compare zero-knowledge proof performance across different circuits, languages, frameworks, and mobile platforms
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Mobile ZK Proof Benchmarking Suite
+          </p>
+          <p className="text-md text-gray-500 max-w-2xl mx-auto mt-2">
+            Compare zero-knowledge proof performance across different circuits, languages, and mobile platforms
           </p>
         </div>
 
 
+        {/* Summary Stats */}
+        {!loading && !error && benchmarkData.length > 0 && (
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Benchmarks</p>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">{totalCount}</p>
+                </div>
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Avg Proving Time</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + item.provingTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
+                  </p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Avg Verification</p>
+                  <p className="text-3xl font-bold text-purple-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + item.verificationTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
+                  </p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Avg Memory Used</p>
+                  <p className="text-3xl font-bold text-orange-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + (item.deviceInfo?.memory?.memoryConsumedInPercentage || 0), 0) / benchmarkData.length).toFixed(1)}%
+                  </p>
+                </div>
+                <div className="bg-orange-100 p-3 rounded-lg">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="mb-8 bg-white rounded-xl shadow-md p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Circuit</label>
+              <select
+                value={filterCircuit}
+                onChange={(e) => handleFilterChange(setFilterCircuit, e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                {circuits.map(circuit => (
+                  <option key={circuit} value={circuit}>
+                    {circuit === 'all' ? 'All Circuits' : circuit}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Framework</label>
+              <select
+                value={filterFramework}
+                onChange={(e) => handleFilterChange(setFilterFramework, e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                {frameworks.map(framework => (
+                  <option key={framework} value={framework}>
+                    {framework === 'all' ? 'All Frameworks' : framework}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+              <select
+                value={filterLanguage}
+                onChange={(e) => handleFilterChange(setFilterLanguage, e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                {languages.map(language => (
+                  <option key={language} value={language}>
+                    {language === 'all' ? 'All Languages' : language}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Platform</label>
+              <select
+                value={filterPlatform}
+                onChange={(e) => handleFilterChange(setFilterPlatform, e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                {platforms.map(platform => (
+                  <option key={platform} value={platform}>
+                    {platform === 'all' ? 'All Platforms' : platform}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Benchmark Cards */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="bg-white rounded-xl p-8 text-center shadow-md">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-gray-600">Loading benchmark data...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 rounded-xl p-8 text-center shadow-md border border-red-200">
+              <p className="text-red-600 font-medium">Error: {error}</p>
+            </div>
+          ) : benchmarkData.length > 0 ? (
+            benchmarkData.map((item, index) => {
+              const isExpanded = expandedRows.has(item.id || index.toString());
+              return (
+                <div key={item.id || index} className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all hover:shadow-lg">
+                  {/* Main Row */}
+                  <div 
+                    className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => toggleRow(item.id || index.toString())}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4">
+                        {/* Circuit */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Circuit</p>
+                          <p className="text-sm font-bold text-gray-900">{item.circuit}</p>
+                        </div>
+                        
+                        {/* Framework */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Framework</p>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {item.framework}
+                          </span>
+                        </div>
+                        
+                        {/* Language */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Language</p>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            item.language === 'circom' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'
+                          }`}>
+                            {item.language}
+                          </span>
+                        </div>
+                        
+                        {/* Platform */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Platform</p>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            item.deviceInfo?.platform === 'Android' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {item.deviceInfo?.platform || 'Unknown'}
+                          </span>
+                        </div>
+                        
+                        {/* Proving Time */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Proving Time</p>
+                          <p className="text-sm font-bold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(2)}s</p>
+                        </div>
+                        
+                        {/* Verification Time */}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Verification</p>
+                          <p className="text-sm font-bold text-purple-600">{(item.verificationTimeMiliSeconds / 1000).toFixed(2)}s</p>
+                        </div>
+                      </div>
+                      
+                      {/* Expand Icon */}
+                      <div className="ml-4">
+                        <svg 
+                          className={`w-6 h-6 text-gray-400 transition-transform ${
+                            isExpanded ? 'transform rotate-180' : ''
+                          }`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 bg-gray-50 p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Device Info */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm">
+                          <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
+                            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Device Information
+                          </h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Device:</span>
+                              <span className="font-medium text-gray-900">{item.deviceInfo?.device || 'N/A'}</span>
+                            </div>
+                            {item.deviceInfo?.manufacturer && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Manufacturer:</span>
+                                <span className="font-medium text-gray-900">{item.deviceInfo.manufacturer}</span>
+                              </div>
+                            )}
+                            {item.deviceInfo?.androidVersion && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Android Version:</span>
+                                <span className="font-medium text-gray-900">{item.deviceInfo.androidVersion}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Proof Size:</span>
+                              <span className="font-medium text-gray-900">{formatBytes(item.proofSize)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Memory Info */}
+                        {item.deviceInfo?.memory && (
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
+                              <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                              </svg>
+                              Memory Usage
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Total RAM:</span>
+                                <span className="font-medium text-gray-900">{formatBytes(item.deviceInfo.memory.totalPhysicalMemory)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Peak Usage:</span>
+                                <span className="font-medium text-gray-900">{formatBytes(item.deviceInfo.memory.peakMemoryUsage)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Consumed:</span>
+                                <span className="font-medium text-gray-900">{formatBytes(item.deviceInfo.memory.memoryConsumedByProof)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Peak Load:</span>
+                                <span className="font-bold text-orange-600">{item.deviceInfo.memory.peakMemoryLoadInPercentage.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Consumed %:</span>
+                                <span className="font-bold text-orange-600">{item.deviceInfo.memory.memoryConsumedInPercentage.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Battery & Timing Info */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm">
+                          <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
+                            <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Performance Metrics
+                          </h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Proving Time:</span>
+                              <span className="font-bold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(3)}s</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Verification Time:</span>
+                              <span className="font-bold text-purple-600">{(item.verificationTimeMiliSeconds / 1000).toFixed(3)}s</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Total Time:</span>
+                              <span className="font-bold text-blue-600">{((item.provingTimeMiliSeconds + item.verificationTimeMiliSeconds) / 1000).toFixed(3)}s</span>
+                            </div>
+                            {item.deviceInfo?.battery && (
+                              <>
+                                <div className="flex justify-between pt-2 border-t border-gray-200">
+                                  <span className="text-gray-600">Battery Before:</span>
+                                  <span className="font-medium text-gray-900">{item.deviceInfo.battery.batteryBeforeProof}%</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Battery After:</span>
+                                  <span className="font-medium text-gray-900">{item.deviceInfo.battery.batteryAfterProof}%</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Consumed:</span>
+                                  <span className="font-bold text-red-600">{item.deviceInfo.battery.batteryConsumed}%</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Timestamp */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm md:col-span-2 lg:col-span-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center text-gray-600">
+                              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span>Benchmark recorded on: <span className="font-medium text-gray-900">{new Date(item.timestamp).toLocaleString()}</span></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="bg-white rounded-xl p-8 text-center shadow-md">
+              <p className="text-gray-500">No benchmark data matches the selected filters</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        {!loading && !error && totalCount > 0 && (
+          <div className="mt-6 bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Items per page selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Show</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={40}>40</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm font-medium text-gray-700">per page</span>
+            </div>
+
+            {/* Page info */}
+            <div className="text-sm text-gray-700">
+              Showing <span className="font-bold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+              <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
+              <span className="font-bold text-gray-900">{totalCount}</span> results
+            </div>
+
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {/* Previous button */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white border border-gray-300'
+                }`}
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                  disabled={page === '...'}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    page === currentPage
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : page === '...'
+                      ? 'bg-white text-gray-400 cursor-default'
+                      : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white border border-gray-300'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next button */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white border border-gray-300'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+          </div>
+        )}
       </section>
     </div>
   );
