@@ -149,94 +149,24 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">DEIMOS</span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Mobile ZK Proof Benchmarking Suite
-          </p>
-          <p className="text-md text-gray-500 max-w-2xl mx-auto mt-2">
-            Compare zero-knowledge proof performance across different circuits, languages, and mobile platforms
-          </p>
-        </div>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 pt-4">
 
 
-        {/* Summary Stats */}
-        {!loading && !error && benchmarkData.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Benchmarks</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-1">{totalCount}</p>
-                </div>
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Proving Time</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">
-                    {(benchmarkData.reduce((sum, item) => sum + item.provingTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
-                  </p>
-                </div>
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Verification</p>
-                  <p className="text-3xl font-bold text-purple-600 mt-1">
-                    {(benchmarkData.reduce((sum, item) => sum + item.verificationTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
-                  </p>
-                </div>
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Memory Used</p>
-                  <p className="text-3xl font-bold text-orange-600 mt-1">
-                    {(benchmarkData.reduce((sum, item) => sum + (item.deviceInfo?.memory?.memoryConsumedInPercentage || 0), 0) / benchmarkData.length).toFixed(1)}%
-                  </p>
-                </div>
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
+
+
+
 
         {/* Filters */}
-        <div className="mb-8 bg-white rounded-xl shadow-md p-6 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Circuit</label>
+        <div className="mb-4 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Filters</h3>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Circuit</label>
               <select
                 value={filterCircuit}
                 onChange={(e) => handleFilterChange(setFilterCircuit, e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
               >
                 {circuits.map(circuit => (
                   <option key={circuit} value={circuit}>
@@ -246,12 +176,12 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Framework</label>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Framework</label>
               <select
                 value={filterFramework}
                 onChange={(e) => handleFilterChange(setFilterFramework, e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
               >
                 {frameworks.map(framework => (
                   <option key={framework} value={framework}>
@@ -261,12 +191,12 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Language</label>
               <select
                 value={filterLanguage}
                 onChange={(e) => handleFilterChange(setFilterLanguage, e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
               >
                 {languages.map(language => (
                   <option key={language} value={language}>
@@ -276,12 +206,12 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Platform</label>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Platform</label>
               <select
                 value={filterPlatform}
                 onChange={(e) => handleFilterChange(setFilterPlatform, e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
               >
                 {platforms.map(platform => (
                   <option key={platform} value={platform}>
@@ -294,46 +224,46 @@ export default function Home() {
         </div>
 
         {/* Benchmark Cards */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {loading ? (
-            <div className="bg-white rounded-xl p-8 text-center shadow-md">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">Loading benchmark data...</p>
+            <div className="bg-white rounded-lg p-6 text-center shadow-sm">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+              <p className="mt-3 text-sm text-gray-600">Loading benchmark data...</p>
             </div>
           ) : error ? (
-            <div className="bg-red-50 rounded-xl p-8 text-center shadow-md border border-red-200">
-              <p className="text-red-600 font-medium">Error: {error}</p>
+            <div className="bg-red-50 rounded-lg p-6 text-center shadow-sm border border-red-200">
+              <p className="text-sm text-red-600 font-medium">Error: {error}</p>
             </div>
           ) : benchmarkData.length > 0 ? (
             benchmarkData.map((item, index) => {
               const isExpanded = expandedRows.has(item.id || index.toString());
               return (
-                <div key={item.id || index} className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all hover:shadow-lg">
+                <div key={item.id || index} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
                   {/* Main Row */}
                   <div 
-                    className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => toggleRow(item.id || index.toString())}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-3">
                         {/* Circuit */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Circuit</p>
-                          <p className="text-sm font-bold text-gray-900">{item.circuit}</p>
+                          <p className="text-xs text-gray-500 mb-0.5">Circuit</p>
+                          <p className="text-sm font-semibold text-gray-900">{item.circuit}</p>
                         </div>
                         
                         {/* Framework */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Framework</p>
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <p className="text-xs text-gray-500 mb-0.5">Framework</p>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {item.framework}
                           </span>
                         </div>
                         
                         {/* Language */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Language</p>
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          <p className="text-xs text-gray-500 mb-0.5">Language</p>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             item.language === 'circom' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'
                           }`}>
                             {item.language}
@@ -342,8 +272,8 @@ export default function Home() {
                         
                         {/* Platform */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Platform</p>
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          <p className="text-xs text-gray-500 mb-0.5">Platform</p>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             item.deviceInfo?.platform === 'Android' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                           }`}>
                             {item.deviceInfo?.platform || 'Unknown'}
@@ -352,21 +282,21 @@ export default function Home() {
                         
                         {/* Proving Time */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Proving Time</p>
-                          <p className="text-sm font-bold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(2)}s</p>
+                          <p className="text-xs text-gray-500 mb-0.5">Proving Time</p>
+                          <p className="text-sm font-semibold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(2)}s</p>
                         </div>
                         
                         {/* Verification Time */}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Verification</p>
-                          <p className="text-sm font-bold text-purple-600">{(item.verificationTimeMiliSeconds / 1000).toFixed(2)}s</p>
+                          <p className="text-xs text-gray-500 mb-0.5">Verification</p>
+                          <p className="text-sm font-semibold text-purple-600">{(item.verificationTimeMiliSeconds / 1000).toFixed(2)}s</p>
                         </div>
                       </div>
                       
                       {/* Expand Icon */}
-                      <div className="ml-4">
+                      <div className="ml-3">
                         <svg 
-                          className={`w-6 h-6 text-gray-400 transition-transform ${
+                          className={`w-5 h-5 text-gray-400 transition-transform ${
                             isExpanded ? 'transform rotate-180' : ''
                           }`} 
                           fill="none" 
@@ -381,17 +311,17 @@ export default function Home() {
                   
                   {/* Expanded Details */}
                   {isExpanded && (
-                    <div className="border-t border-gray-200 bg-gray-50 p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="border-t border-gray-200 bg-gray-50 p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Device Info */}
-                        <div className="bg-white rounded-lg p-4 shadow-sm">
-                          <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center">
+                            <svg className="w-4 h-4 mr-1.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             Device Information
                           </h4>
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-1.5 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-600">Device:</span>
                               <span className="font-medium text-gray-900">{item.deviceInfo?.device || 'N/A'}</span>
@@ -423,14 +353,14 @@ export default function Home() {
                         
                         {/* Memory Info */}
                         {item.deviceInfo?.memory && (
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                              <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="bg-white rounded-lg p-3 shadow-sm">
+                            <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center">
+                              <svg className="w-4 h-4 mr-1.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                               </svg>
                               Memory Usage
                             </h4>
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-1.5 text-xs">
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Total RAM:</span>
                                 <span className="font-medium text-gray-900">{formatBytes(item.deviceInfo.memory.totalPhysicalMemory)}</span>
@@ -456,14 +386,14 @@ export default function Home() {
                         )}
                         
                         {/* Battery & Timing Info */}
-                        <div className="bg-white rounded-lg p-4 shadow-sm">
-                          <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center">
+                            <svg className="w-4 h-4 mr-1.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                             Performance Metrics
                           </h4>
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-1.5 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-600">Proving Time:</span>
                               <span className="font-bold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(3)}s</span>
@@ -478,7 +408,7 @@ export default function Home() {
                             </div>
                             {item.deviceInfo?.battery && (
                               <>
-                                <div className="flex justify-between pt-2 border-t border-gray-200">
+                                <div className="flex justify-between pt-1.5 border-t border-gray-200">
                                   <span className="text-gray-600">Battery Before:</span>
                                   <span className="font-medium text-gray-900">{item.deviceInfo.battery.batteryBeforeProof}%</span>
                                 </div>
@@ -496,10 +426,10 @@ export default function Home() {
                         </div>
                         
                         {/* Timestamp */}
-                        <div className="bg-white rounded-lg p-4 shadow-sm md:col-span-2 lg:col-span-3">
-                          <div className="flex items-center justify-between text-sm">
+                        <div className="bg-white rounded-lg p-3 shadow-sm md:col-span-2 lg:col-span-3">
+                          <div className="flex items-center justify-between text-xs">
                             <div className="flex items-center text-gray-600">
-                              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                               <span>Benchmark recorded on: <span className="font-medium text-gray-900">{new Date(item.timestamp).toLocaleString()}</span></span>
@@ -513,23 +443,23 @@ export default function Home() {
               );
             })
           ) : (
-            <div className="bg-white rounded-xl p-8 text-center shadow-md">
-              <p className="text-gray-500">No benchmark data matches the selected filters</p>
+            <div className="bg-white rounded-lg p-6 text-center shadow-sm">
+              <p className="text-sm text-gray-500">No benchmark data matches the selected filters</p>
             </div>
           )}
         </div>
 
         {/* Pagination Controls */}
         {!loading && !error && totalCount > 0 && (
-          <div className="mt-6 bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mt-4 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             {/* Items per page selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Show</span>
+              <span className="text-xs font-medium text-gray-700">Show</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                className="px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs bg-white"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -537,11 +467,11 @@ export default function Home() {
                 <option value={40}>40</option>
                 <option value={50}>50</option>
               </select>
-              <span className="text-sm font-medium text-gray-700">per page</span>
+              <span className="text-xs font-medium text-gray-700">per page</span>
             </div>
 
             {/* Page info */}
-            <div className="text-sm text-gray-700">
+            <div className="text-xs text-gray-700">
               Showing <span className="font-bold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
               <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of{' '}
               <span className="font-bold text-gray-900">{totalCount}</span> results
@@ -553,7 +483,7 @@ export default function Home() {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   currentPage === 1
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white border border-gray-300'
@@ -568,7 +498,7 @@ export default function Home() {
                   key={index}
                   onClick={() => typeof page === 'number' && setCurrentPage(page)}
                   disabled={page === '...'}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     page === currentPage
                       ? 'bg-blue-600 text-white shadow-md'
                       : page === '...'
@@ -584,7 +514,7 @@ export default function Home() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   currentPage === totalPages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-blue-600 hover:text-white border border-gray-300'
@@ -596,6 +526,85 @@ export default function Home() {
           </div>
           </div>
         )}
+
+        {/* Summary Stats */}
+        {!loading && !error && benchmarkData.length > 0 && (
+          <div className="my-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Total Benchmarks</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">{totalCount}</p>
+                </div>
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Avg Proving Time</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + item.provingTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
+                  </p>
+                </div>
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Avg Verification</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + item.verificationTimeMiliSeconds, 0) / benchmarkData.length / 1000).toFixed(2)}s
+                  </p>
+                </div>
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Avg Memory Used</p>
+                  <p className="text-2xl font-bold text-orange-600 mt-1">
+                    {(benchmarkData.reduce((sum, item) => sum + (item.deviceInfo?.memory?.memoryConsumedInPercentage || 0), 0) / benchmarkData.length).toFixed(1)}%
+                  </p>
+                </div>
+                <div className="bg-orange-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        
+        <div className="text-center mt-8">          
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">DEIMOS</span>
+          </h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Mobile ZK Proof Benchmarking Suite
+          </p>
+          <p className="text-sm text-gray-500 max-w-2xl mx-auto mt-1.5">
+            Compare zero-knowledge proof performance across different circuits, languages, and mobile platforms
+          </p>
+        </div>
+
+        
       </section>
     </div>
   );
