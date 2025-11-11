@@ -52,8 +52,9 @@ export const getBenchmarks = async (req, res) => {
     // Calculate pagination
     const startIndex = (pageNum - 1) * limitNum;
     
-    // Get paginated data
+    // Get paginated data sorted by timestamp (latest to oldest)
     const snapshot = await query
+      .orderBy('timestamp', 'desc')
       .offset(startIndex)
       .limit(limitNum)
       .get();
