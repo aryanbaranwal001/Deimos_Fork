@@ -45,27 +45,34 @@ export const getBenchmarks = async (req, res) => {
       query = query.where('deviceInfo.platform', '==', platform);
     }
 
-    // Get total count for filtered data
-    const countSnapshot = await query.get();
-    const totalCount = countSnapshot.size;
-
-    // Calculate pagination
-    const startIndex = (pageNum - 1) * limitNum;
+    // Get all filtered data
+    const snapshot = await query.get();
     
-    // Get paginated data sorted by timestamp (latest to oldest)
-    const snapshot = await query
-      .orderBy('timestamp', 'desc')
-      .offset(startIndex)
-      .limit(limitNum)
-      .get();
-
-    const data = [];
+    // Convert to array and sort by timestamp (latest to oldest)
+    const allData = [];
     snapshot.forEach(doc => {
-      data.push({
+      allData.push({
         id: doc.id,
         ...doc.data()
       });
     });
+    
+    // Sort by timestamp in descending order (latest first)
+    allData.sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
+      const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
+      return timeB - timeA; // Descending order
+    });
+    
+    // Get total count
+    const totalCount = allData.length;
+    
+    // Calculate pagination
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    
+    // Get paginated slice
+    const data = allData.slice(startIndex, endIndex);
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / limitNum);
