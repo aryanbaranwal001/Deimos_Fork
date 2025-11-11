@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { BenchmarkData } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -159,10 +159,8 @@ export default function Home() {
 
         {/* Filters */}
         <div className="mb-4 bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Filters</h3>
           <div className="flex flex-wrap gap-3">
             <div className="flex-1 min-w-[180px]">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Circuit</label>
               <select
                 value={filterCircuit}
                 onChange={(e) => handleFilterChange(setFilterCircuit, e.target.value)}
@@ -177,7 +175,6 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-w-[180px]">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Framework</label>
               <select
                 value={filterFramework}
                 onChange={(e) => handleFilterChange(setFilterFramework, e.target.value)}
@@ -192,7 +189,6 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-w-[180px]">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Language</label>
               <select
                 value={filterLanguage}
                 onChange={(e) => handleFilterChange(setFilterLanguage, e.target.value)}
@@ -207,7 +203,6 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-w-[180px]">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Platform</label>
               <select
                 value={filterPlatform}
                 onChange={(e) => handleFilterChange(setFilterPlatform, e.target.value)}
@@ -223,96 +218,69 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Benchmark Cards */}
-        <div className="space-y-3">
+        {/* Benchmark Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
-            <div className="bg-white rounded-lg p-6 text-center shadow-sm">
+            <div className="p-8 text-center">
               <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
               <p className="mt-3 text-sm text-gray-600">Loading benchmark data...</p>
             </div>
           ) : error ? (
-            <div className="bg-red-50 rounded-lg p-6 text-center shadow-sm border border-red-200">
+            <div className="p-8 text-center">
               <p className="text-sm text-red-600 font-medium">Error: {error}</p>
             </div>
           ) : benchmarkData.length > 0 ? (
-            benchmarkData.map((item, index) => {
-              const isExpanded = expandedRows.has(item.id || index.toString());
-              return (
-                <div key={item.id || index} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
-                  {/* Main Row */}
-                  <div 
-                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => toggleRow(item.id || index.toString())}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-3">
-                        {/* Circuit */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Circuit</p>
-                          <p className="text-sm font-semibold text-gray-900">{item.circuit}</p>
-                        </div>
-                        
-                        {/* Framework */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Framework</p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {item.framework}
-                          </span>
-                        </div>
-                        
-                        {/* Language */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Language</p>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            item.language === 'circom' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'
-                          }`}>
-                            {item.language}
-                          </span>
-                        </div>
-                        
-                        {/* Platform */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Platform</p>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            item.deviceInfo?.platform === 'Android' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {item.deviceInfo?.platform || 'Unknown'}
-                          </span>
-                        </div>
-                        
-                        {/* Proving Time */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Proving Time</p>
-                          <p className="text-sm font-semibold text-green-600">{(item.provingTimeMiliSeconds / 1000).toFixed(2)}s</p>
-                        </div>
-                        
-                        {/* Verification Time */}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Verification</p>
-                          <p className="text-sm font-semibold text-purple-600">{(item.verificationTimeMiliSeconds / 1000).toFixed(2)}s</p>
-                        </div>
-                      </div>
-                      
-                      {/* Expand Icon */}
-                      <div className="ml-3">
-                        <svg 
-                          className={`w-5 h-5 text-gray-400 transition-transform ${
-                            isExpanded ? 'transform rotate-180' : ''
-                          }`} 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Circuit</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Framework</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Language</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Platform</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Proving Time (s)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Verification Time (s)</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {benchmarkData.map((item, index) => {
+                    const isExpanded = expandedRows.has(item.id || index.toString());
+                    return (
+                      <React.Fragment key={item.id || index}>
+                        {/* Main Row */}
+                        <tr 
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => toggleRow(item.id || index.toString())}
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Expanded Details */}
-                  {isExpanded && (
-                    <div className="border-t border-gray-200 bg-gray-50 p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{item.circuit}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700">
+                              {item.framework}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-orange-100 text-orange-700">
+                              {item.language}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
+                              item.deviceInfo?.platform === 'Android' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {item.deviceInfo?.platform || 'Unknown'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{item.deviceInfo?.device || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{(item.provingTimeMiliSeconds / 1000).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{(item.verificationTimeMiliSeconds / 1000).toFixed(2)}</td>
+                        </tr>
+                        
+                        {/* Expanded Details Row */}
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-4 bg-gray-50">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Device Info */}
                         <div className="bg-white rounded-lg p-3 shadow-sm">
                           <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center">
@@ -436,17 +404,22 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <div className="bg-white rounded-lg p-6 text-center shadow-sm">
+            <div className="p-8 text-center">
               <p className="text-sm text-gray-500">No benchmark data matches the selected filters</p>
             </div>
-          )}
+          )
+        }
         </div>
 
         {/* Pagination Controls */}
