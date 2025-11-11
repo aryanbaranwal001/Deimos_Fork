@@ -1,8 +1,9 @@
-// Simple test script to verify the API endpoints work correctly
-import http from 'http';
+// ✅ Deimos Backend API Test Script
+// Uses HTTPS and fetch instead of http for Render deployment
 
-const API_HOST = 'localhost';
-const API_PORT = 5000;
+import fetch from 'node-fetch';
+
+const API_BASE = 'https://deimos-fork.onrender.com';
 
 // Test data matching the Flutter app structure
 const testBenchmarkData = {
@@ -35,44 +36,21 @@ const testBenchmarkData = {
   "timestamp": "2025-11-11T11:23:27.366651"
 };
 
-function makeRequest(method, path, data = null) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: API_HOST,
-      port: API_PORT,
-      path: path,
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    };
+async function makeRequest(method, path, data = null) {
+  const url = `${API_BASE}${path}`;
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (data) options.body = JSON.stringify(data);
 
-    const req = http.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk);
-      res.on('end', () => {
-        try {
-          resolve({
-            statusCode: res.statusCode,
-            data: JSON.parse(body)
-          });
-        } catch (e) {
-          resolve({
-            statusCode: res.statusCode,
-            data: body
-          });
-        }
-      });
-    });
-
-    req.on('error', reject);
-
-    if (data) {
-      req.write(JSON.stringify(data));
-    }
-
-    req.end();
-  });
+  const res = await fetch(url, options);
+  const text = await res.text();
+  try {
+    return { statusCode: res.status, data: JSON.parse(text) };
+  } catch {
+    return { statusCode: res.status, data: text };
+  }
 }
 
 async function runTests() {
@@ -81,52 +59,48 @@ async function runTests() {
   try {
     // Test 1: Health Check
     console.log('1️⃣  Testing health endpoint...');
-    const healthResponse = await makeRequest('GET', '/api/health');
-    console.log(`   Status: ${healthResponse.statusCode}`);
-    console.log(`   Response:`, healthResponse.data);
-    console.log(healthResponse.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
+    const health = await makeRequest('GET', '/api/health');
+    console.log(`   Status: ${health.statusCode}`, health.data);
+    console.log(health.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
 
-    // Test 2: Get Filters
+    // Test 2: Filters
     console.log('2️⃣  Testing filters endpoint...');
-    const filtersResponse = await makeRequest('GET', '/api/filters');
-    console.log(`   Status: ${filtersResponse.statusCode}`);
-    console.log(`   Response:`, filtersResponse.data);
-    console.log(filtersResponse.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
+    const filters = await makeRequest('GET', '/api/filters');
+    console.log(`   Status: ${filters.statusCode}`, filters.data);
+    console.log(filters.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
 
-    // Test 3: Submit Benchmark Data
+    // Test 3: Submit Benchmark
     console.log('3️⃣  Testing benchmark submission...');
-    const submitResponse = await makeRequest('POST', '/api/benchmark-result', testBenchmarkData);
-    console.log(`   Status: ${submitResponse.statusCode}`);
-    console.log(`   Response:`, submitResponse.data);
-    console.log(submitResponse.statusCode === 201 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
+    const submit = await makeRequest('POST', '/api/benchmark-result', testBenchmarkData);
+    console.log(`   Status: ${submit.statusCode}`, submit.data);
+    console.log(submit.statusCode === 201 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
 
-    // Test 4: Duplicate Check
+    // Test 4: Duplicate Detection
     console.log('4️⃣  Testing duplicate detection...');
-    const duplicateResponse = await makeRequest('POST', '/api/benchmark-result', testBenchmarkData);
-    console.log(`   Status: ${duplicateResponse.statusCode}`);
-    console.log(`   Response:`, duplicateResponse.data);
-    console.log(duplicateResponse.data.duplicate ? '   ✅ PASSED (Duplicate detected)\n' : '   ❌ FAILED\n');
+    const duplicate = await makeRequest('POST', '/api/benchmark-result', testBenchmarkData);
+    console.log(`   Status: ${duplicate.statusCode}`, duplicate.data);
+    console.log(duplicate.data?.duplicate ? '   ✅ PASSED (Duplicate detected)\n' : '   ❌ FAILED\n');
 
-    // Test 5: Get Benchmarks
+    // Test 5: Benchmarks List
     console.log('5️⃣  Testing benchmarks endpoint...');
-    const benchmarksResponse = await makeRequest('GET', '/api/benchmarks?page=1&limit=10');
-    console.log(`   Status: ${benchmarksResponse.statusCode}`);
-    console.log(`   Total Count: ${benchmarksResponse.data.pagination?.totalCount || 0}`);
-    console.log(`   Data Items: ${benchmarksResponse.data.data?.length || 0}`);
-    console.log(benchmarksResponse.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
+    const benchmarks = await makeRequest('GET', '/api/benchmarks?page=1&limit=10');
+    console.log(`   Status: ${benchmarks.statusCode}`);
+    console.log(`   Total Count: ${benchmarks.data?.pagination?.totalCount || 0}`);
+    console.log(`   Data Items: ${benchmarks.data?.data?.length || 0}`);
+    console.log(benchmarks.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
 
     // Test 6: Filtered Benchmarks
     console.log('6️⃣  Testing filtered benchmarks...');
-    const filteredResponse = await makeRequest('GET', '/api/benchmarks?circuit=Poseidon&platform=Android');
-    console.log(`   Status: ${filteredResponse.statusCode}`);
-    console.log(`   Filtered Count: ${filteredResponse.data.pagination?.totalCount || 0}`);
-    console.log(filteredResponse.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
+    const filtered = await makeRequest('GET', '/api/benchmarks?circuit=Poseidon&platform=Android');
+    console.log(`   Status: ${filtered.statusCode}`);
+    console.log(`   Filtered Count: ${filtered.data?.pagination?.totalCount || 0}`);
+    console.log(filtered.statusCode === 200 ? '   ✅ PASSED\n' : '   ❌ FAILED\n');
 
     console.log('✨ All tests completed!');
 
-  } catch (error) {
-    console.error('❌ Test failed with error:', error.message);
-    console.error('   Make sure the backend server is running on http://localhost:5000');
+  } catch (err) {
+    console.error('❌ Test failed with error:', err.message);
+    console.error('   Ensure https://deimos-fork.onrender.com is reachable.');
   }
 }
 
