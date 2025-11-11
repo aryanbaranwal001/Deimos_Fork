@@ -13,23 +13,32 @@ export const receiveBenchmarkResult = async (req, res) => {
     console.log(JSON.stringify(data, null, 2));
     console.log('\n=====================================\n');
     
-    // Check for duplicate based on androidId (if present)
+    // Check for duplicate based on combination of circuit, framework, language, and androidId
     const androidId = data.deviceInfo?.androidId;
+    const circuit = data.circuit;
+    const framework = data.framework;
+    const language = data.language;
     
-    if (androidId) {
-      // Query Firestore to check if this androidId already exists
+    if (androidId && circuit && framework && language) {
+      // Query Firestore to check if this exact combination already exists
       const existingSnapshot = await db.collection(COLLECTION_NAMES.BENCHMARKS)
         .where('deviceInfo.androidId', '==', androidId)
+        .where('circuit', '==', circuit)
+        .where('framework', '==', framework)
+        .where('language', '==', language)
         .limit(1)
         .get();
       
       if (!existingSnapshot.empty) {
-        logger.info(`Duplicate benchmark data detected for androidId: ${androidId}`);
+        logger.info(`Duplicate benchmark detected - Circuit: ${circuit}, Framework: ${framework}, Language: ${language}, AndroidId: ${androidId}`);
         return res.status(200).json({
           success: false,
-          message: 'Benchmark data already exists for this device',
+          message: 'Benchmark data already exists for this circuit/framework/language/device combination',
           duplicate: true,
-          androidId: androidId
+          androidId: androidId,
+          circuit: circuit,
+          framework: framework,
+          language: language
         });
       }
     }
