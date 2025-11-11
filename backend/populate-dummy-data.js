@@ -4,8 +4,8 @@ import { COLLECTION_NAMES } from './config/constants.js';
 import { logger } from './utils/logger.js';
 
 const circuits = ['Poseidon', 'SHA256', 'Keccak256', 'Blake2s256', 'MiMC256', 'Pedersen'];
-const frameworks = ['MoPro', 'Halo2', 'Noir'];
-const languages = ['circom', 'rust', 'noir'];
+const frameworks = ['MoPro']; // Only one framework
+const languages = ['circom', 'noir', 'halo2']; // Three languages
 const platforms = ['Android', 'iOS'];
 
 const androidDevices = [
@@ -95,17 +95,27 @@ function generateBatteryInfo() {
 
 function generateBenchmarkData() {
   const circuit = randomElement(circuits);
-  const framework = randomElement(frameworks);
+  const framework = 'MoPro'; // Always MoPro
   const language = randomElement(languages);
   const platform = randomElement(platforms);
   
-  // Proving time varies by circuit complexity (1-10 seconds)
-  const provingTime = randomInt(800, 10000);
+  // Proving time varies by circuit and language (realistic ranges)
+  // Circom: 1-5 seconds, Noir: 2-8 seconds, Halo2: 3-10 seconds
+  let provingTimeRange;
+  if (language === 'circom') {
+    provingTimeRange = [1000, 5000];
+  } else if (language === 'noir') {
+    provingTimeRange = [2000, 8000];
+  } else { // halo2
+    provingTimeRange = [3000, 10000];
+  }
+  const provingTime = randomInt(provingTimeRange[0], provingTimeRange[1]);
+  
   // Verification is typically much faster (50-500ms)
   const verificationTime = randomInt(50, 500);
   
-  // Proof size varies by circuit (500 bytes - 5KB)
-  const proofSize = randomInt(500, 5000);
+  // Proof size varies by circuit (realistic range: 800-2000 bytes)
+  const proofSize = randomInt(800, 2000);
   
   let deviceInfo;
   
@@ -174,7 +184,7 @@ async function populateDatabase(count = 50) {
     console.log(`\n🎉 Successfully populated database with ${totalAdded} benchmark entries!`);
     console.log('\n📊 Summary:');
     console.log(`   - Circuits: ${circuits.join(', ')}`);
-    console.log(`   - Frameworks: ${frameworks.join(', ')}`);
+    console.log(`   - Framework: ${frameworks[0]} (only framework)`);
     console.log(`   - Languages: ${languages.join(', ')}`);
     console.log(`   - Platforms: ${platforms.join(', ')}`);
     console.log(`   - Android Devices: ${androidDevices.length} different models`);
