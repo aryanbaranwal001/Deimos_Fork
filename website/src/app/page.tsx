@@ -408,6 +408,12 @@ export default function Home() {
                                 <span className="font-medium text-gray-900">{item.deviceInfo.androidVersion}</span>
                               </div>
                             )}
+                            {item.deviceInfo?.androidId && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Android ID:</span>
+                                <span className="font-mono text-xs font-medium text-gray-900 break-all">{item.deviceInfo.androidId}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-gray-600">Proof Size:</span>
                               <span className="font-medium text-gray-900">{formatBytes(item.proofSize)}</span>
